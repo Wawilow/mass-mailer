@@ -297,8 +297,14 @@ def smtp_connect(smtp_server, port, user, password):
     return server_obj
 
 
-def smtp_sendmail(server_obj, smtp_server, smtp_user, mail_str):
+def smtp_sendmail(mail_str):
+    smtp_str = random.choice(smtp_pool_array)
+    smtp_server, port, smtp_user, password = smtp_str.split('|')
+    server_obj = smtp_connect(smtp_server, port, smtp_user, password)
+    current_server = f'{smtp_server} ({smtp_user}): '
+
     global config, no_read_receipt_for, total_sent, delay_time
+
     mail_redirect_url = random.choice(config['redirects_list'])
     subs = [mail_str, smtp_user, mail_redirect_url] + get_random_name()
     mail_to = extract_email(mail_str)
@@ -331,6 +337,7 @@ def smtp_sendmail(server_obj, smtp_server, smtp_user, mail_str):
     message_raw = headers + message.as_string()
     server_obj.sendmail(smtp_from, mail_to, message_raw)
     time.sleep(delay_time)
+    return current_server, smtp_str
 
 
 def get_testmail_str(smtp_str):
@@ -351,16 +358,14 @@ def smtp_testmail():
             smtp_str = random.choice(smtp_pool_array)
         except:
             exit(wl + err + 'sorry, no valid smtp servers left. bye.')
-        smtp_server, port, smtp_user, password = smtp_str.split('|')
         try:
-            server_obj = smtp_connect(smtp_server, port, smtp_user, password)
-            smtp_sendmail(server_obj, smtp_server, smtp_user, test_mail_str)
+            current_server, smtp_str = smtp_sendmail(test_mail_str)
             test_mail_sent = True
         except Exception as e:
             msg = '~\b[X] ' + str(e).split('b\'')[-1].strip()
             smtp_errors_que.put((smtp_str, msg, 0))
             smtp_str in smtp_pool_array and smtp_pool_array.remove(smtp_str)
-            print(wl + err + smtp_server + ' (' + smtp_user + '): ' + red(msg))
+            print(wl + err + current_server + red(msg))
     return True
 
 
@@ -398,17 +403,15 @@ def worker_item(mail_que, results_que):
             break
         else:
             smtp_str = random.choice(smtp_pool_array)
-            print("smtp_str: ", smtp_str)
-            smtp_server, port, smtp_user, password = smtp_str.split('|')
             smtp_sent = 0
-            current_server = f'{smtp_server} ({smtp_user}): '
-            results_que.put((self.name, current_server + blue('~\b->- ', 0) + smtp_str, mails_sent))
+            current_server = f'{"later"} ({"later"}): '
+            results_que.put((self.name, current_server + blue('~\b->- ', 0) + "later", mails_sent))
             try:
-                server_obj = smtp_connect(smtp_server, port, smtp_user, password)
                 while True:
                     if mail_que.empty() and not mail_str:
                         break
                     try:
+
                         time_start = time.perf_counter()
                         mail_str = get_testmail_str(smtp_str) or mail_str or mail_que.get()
                         mail_to = extract_email(mail_str)
@@ -421,7 +424,7 @@ def worker_item(mail_que, results_que):
                             mail_str = False
                             time.sleep(0.5)
                             continue
-                        smtp_sendmail(server_obj, smtp_server, smtp_user, mail_str)
+                        current_server, smtp_str = smtp_sendmail(mail_str)
                         msg = green('+\b' + '>' * (mails_sent % 3) + b + '>', 0) + green('>> '[mails_sent % 3:],
                                                                                          0) + mail_str
                         results_que.put((self.name, current_server + msg, mails_sent))
@@ -685,7 +688,7 @@ while True:
         total_sent += 1 if '+\b' in thread_status else 0
         skipped += 1 if '-\b' in thread_status else 0
         mails_per_second = round(mails_sent / time_takes, 1)
-        threads_statuses[thread_name] = f'{thread_name}: '.rjust(7) + str_ljust(thread_status,window_width) + f'{mails_sent} sent ({mails_per_second} mail/s)'.rjust(23)
+        threads_statuses[thread_name] = f'{thread_name}: '.rjust(7) + str_ljust(thread_status, window_width) + f'{mails_sent} sent ({mails_per_second} mail/s)'.rjust(23)
         got_updates = True
     if threads_counter == 0:
         if mail_que.empty():
