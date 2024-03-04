@@ -298,7 +298,7 @@ def smtp_connect(smtp_server, port, user, password):
 
 
 def smtp_sendmail(server_obj, smtp_server, smtp_user, mail_str):
-    global config, no_read_receipt_for, total_sent
+    global config, no_read_receipt_for, total_sent, delay_time
     mail_redirect_url = random.choice(config['redirects_list'])
     subs = [mail_str, smtp_user, mail_redirect_url] + get_random_name()
     mail_to = extract_email(mail_str)
@@ -330,7 +330,7 @@ def smtp_sendmail(server_obj, smtp_server, smtp_user, mail_str):
         headers += get_read_receipt_headers(smtp_from)
     message_raw = headers + message.as_string()
     server_obj.sendmail(smtp_from, mail_to, message_raw)
-    time.sleep(5.5)
+    time.sleep(delay_time)
 
 
 def get_testmail_str(smtp_str):
@@ -459,7 +459,7 @@ def get_random_name():
 
 
 def load_config():
-    global config, smtp_pool_array, threads_count
+    global config, smtp_pool_array, threads_count, delay_time
     head_name = 'madcatmailer'
     temp_config = configparser.ConfigParser({
         'smtps_list_file': '',
@@ -474,6 +474,7 @@ def load_config():
         'add_read_receipts': '',
         'add_high_priority': '',
         'add_threads_count': '',
+        'add_delay_time': '',
     })
     if len(sys.argv) == 2:
         config['config_file'] = sys.argv[1] if is_file_or_url(sys.argv[1]) else exit(
@@ -505,6 +506,11 @@ def load_config():
         threads_count = int(config['add_threads_count'])
     except:
         threads_count = len(smtp_pool_array) * 5 if len(smtp_pool_array) * 5 < 40 else 40
+    try:
+        delay_time = int(config['add_delay_time'])
+    except:
+        delay_time = 0
+
     if not is_file_or_url(config['mails_list_file']):
         exit(err + 'cannot open mails list file. does it exist?')
     else:
@@ -629,6 +635,7 @@ smtp_pool_tested = {}
 threads_statuses = {}
 test_mail_str = ''
 threads_count = 1
+delay_time = 0
 connection_timeout = 5
 total_sent = 0
 skipped = 0
