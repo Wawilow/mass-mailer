@@ -659,12 +659,10 @@ load_config()
 fill_mail_queue()
 setup_logs_writer()
 
-print(inf + 'ipv4 address:                  ' + bold(socket.has_ipv4 or '-') + ' (' + (
-            socket.ipv4_blacklist or green('clean')) + ')')
+print(inf + 'ipv4 address:                  ' + bold(socket.has_ipv4 or '-') + ' (' + (socket.ipv4_blacklist or green('clean')) + ')')
 print(inf + 'ipv6 address:                  ' + bold(socket.has_ipv6 or '-'))
 print(okk + 'loading config:                ' + bold(config['config_file']))
-print(
-    inf + 'smtp servers file:             ' + bold(config['smtps_list_file'] + ' (' + num(len(smtp_pool_array)) + ')'))
+print(inf + 'smtp servers file:             ' + bold(config['smtps_list_file'] + ' (' + num(len(smtp_pool_array)) + ')'))
 print(inf + 'smtp errors log:               ' + bold(config['smtps_errors_file']))
 print(inf + 'emails list file:              ' + bold(config['mails_list_file'] + ' (' + num(total_mails_to_sent) + ')'))
 print(inf + 'dangerous emails log:          ' + bold(config['mails_dangerous_file']))
@@ -673,6 +671,7 @@ print(inf + 'mail body:                     ' + bold(config['mail_body']))
 print(inf + 'attachments:                   ' + bold(config['attachment_files'] or '-'))
 print(inf + 'file with redirects:           ' + bold(config['redirects_file'] or '-'))
 print(inf + 'threads_count:                 ' + bold(str(threads_count)))
+print(inf + 'delay_time:                    ' + bold(str(delay_time)))
 test_inbox()
 
 input(npt + 'press ' + bold('[ Enter ]') + ' to start...')
